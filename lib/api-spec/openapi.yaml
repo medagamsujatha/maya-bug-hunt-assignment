@@ -3,13 +3,17 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API specification for Maya Bug Hunt Tracker
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: bugs
+    description: Bug report operations
+  - name: stats
+    description: Statistics and summaries
 paths:
   /healthz:
     get:
@@ -24,6 +28,149 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /bugs:
+    get:
+      operationId: listBugs
+      tags: [bugs]
+      summary: List all bugs
+      description: Returns a list of all bug reports
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: severity
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of bugs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Bug"
+    post:
+      operationId: createBug
+      tags: [bugs]
+      summary: Create a bug report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBugBody"
+      responses:
+        "201":
+          description: Bug created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bug"
+
+  /bugs/{id}:
+    get:
+      operationId: getBug
+      tags: [bugs]
+      summary: Get a single bug
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Bug detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bug"
+        "404":
+          description: Not found
+    put:
+      operationId: updateBug
+      tags: [bugs]
+      summary: Update a bug report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBugBody"
+      responses:
+        "200":
+          description: Bug updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bug"
+    delete:
+      operationId: deleteBug
+      tags: [bugs]
+      summary: Delete a bug report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /bugs/stats/summary:
+    get:
+      operationId: getBugStats
+      tags: [stats]
+      summary: Get bug statistics summary
+      description: Returns aggregated bug stats by category, severity, and status
+      responses:
+        "200":
+          description: Bug statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BugStats"
+
+  /bugs/stats/recent:
+    get:
+      operationId: getRecentBugs
+      tags: [stats]
+      summary: Get recently added bugs
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 5
+      responses:
+        "200":
+          description: Recent bugs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Bug"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +181,177 @@ components:
       required:
         - status
 
+    Bug:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        category:
+          type: string
+          enum: [UI, UX, Client-side, Server-side, SSR-Hydration, Performance, Security, Accessibility, "Product Content", Other]
+        severity:
+          type: string
+          enum: [Critical, High, Medium, Low, Cosmetic]
+        status:
+          type: string
+          enum: [Draft, Submitted, Confirmed, Duplicate, Invalid]
+        environment:
+          type: string
+        stepsToReproduce:
+          type: string
+        expectedBehaviour:
+          type: string
+        actualBehaviour:
+          type: string
+        rootCause:
+          type: string
+          nullable: true
+        suggestedFix:
+          type: string
+          nullable: true
+        submittedToForm:
+          type: boolean
+        formSubmissionUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - category
+        - severity
+        - status
+        - environment
+        - stepsToReproduce
+        - expectedBehaviour
+        - actualBehaviour
+        - submittedToForm
+        - createdAt
+        - updatedAt
+
+    CreateBugBody:
+      type: object
+      properties:
+        title:
+          type: string
+        category:
+          type: string
+          enum: [UI, UX, Client-side, Server-side, SSR-Hydration, Performance, Security, Accessibility, "Product Content", Other]
+        severity:
+          type: string
+          enum: [Critical, High, Medium, Low, Cosmetic]
+        status:
+          type: string
+          enum: [Draft, Submitted, Confirmed, Duplicate, Invalid]
+        environment:
+          type: string
+        stepsToReproduce:
+          type: string
+        expectedBehaviour:
+          type: string
+        actualBehaviour:
+          type: string
+        rootCause:
+          type: string
+          nullable: true
+        suggestedFix:
+          type: string
+          nullable: true
+        submittedToForm:
+          type: boolean
+        formSubmissionUrl:
+          type: string
+          nullable: true
+      required:
+        - title
+        - category
+        - severity
+        - environment
+        - stepsToReproduce
+        - expectedBehaviour
+        - actualBehaviour
+
+    UpdateBugBody:
+      type: object
+      properties:
+        title:
+          type: string
+        category:
+          type: string
+          enum: [UI, UX, Client-side, Server-side, SSR-Hydration, Performance, Security, Accessibility, "Product Content", Other]
+        severity:
+          type: string
+          enum: [Critical, High, Medium, Low, Cosmetic]
+        status:
+          type: string
+          enum: [Draft, Submitted, Confirmed, Duplicate, Invalid]
+        environment:
+          type: string
+        stepsToReproduce:
+          type: string
+        expectedBehaviour:
+          type: string
+        actualBehaviour:
+          type: string
+        rootCause:
+          type: string
+          nullable: true
+        suggestedFix:
+          type: string
+          nullable: true
+        submittedToForm:
+          type: boolean
+        formSubmissionUrl:
+          type: string
+          nullable: true
+
+    BugStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        byCategory:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              count:
+                type: integer
+            required: [category, count]
+        bySeverity:
+          type: array
+          items:
+            type: object
+            properties:
+              severity:
+                type: string
+              count:
+                type: integer
+            required: [severity, count]
+        byStatus:
+          type: array
+          items:
+            type: object
+            properties:
+              status:
+                type: string
+              count:
+                type: integer
+            required: [status, count]
+        rewardEligible:
+          type: integer
+      required:
+        - total
+        - byCategory
+        - bySeverity
+        - byStatus
+        - rewardEligible
